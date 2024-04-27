@@ -7,6 +7,7 @@ import logging
 from typing import List
 import bcrypt
 from utils.index import generate_jwt_token
+from models.index import predict
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -98,3 +99,11 @@ async def login(login_request: LoginRequest):
 
     # If the username and password are correct, return a success message along with the JWT token
     return {"message": "Login successful", "token": jwt_token}
+
+class Query(BaseModel):
+    name: str
+
+# Prediction route
+@app.post("/predict/")
+async def prediction(query: Query):
+    return predict(query.name)

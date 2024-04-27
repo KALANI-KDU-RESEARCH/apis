@@ -3,3 +3,5 @@ uvicorn[standard]
 pymongo
 bcrypt
 pyjwt
+google-generativeai
+IPython
