@@ -48,6 +48,7 @@ class User(BaseModel):
     age: int
     experience: int
     interests: List[str]
+    type: str
 
 #============================================================================================================
 
@@ -69,7 +70,7 @@ async def register(user: User):
     # Insert the new user into the database
     user_data = {"email": user.email, "password": hashed_password,  "age": user.age,
         "experience": user.experience,
-        "interests": user.interests}
+        "interests": user.interests, "type": user.type}
     result = users_collection.insert_one(user_data)
 
     logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
