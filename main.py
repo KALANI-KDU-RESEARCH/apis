@@ -87,6 +87,8 @@ class LoginRequest(BaseModel):
 async def login(login_request: LoginRequest):
     # Find the user in the database
     user = users_collection.find_one({"email": login_request.email})
+    print(user)
+    user['_id'] = str(user['_id'])
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
@@ -98,7 +100,7 @@ async def login(login_request: LoginRequest):
     jwt_token = generate_jwt_token(user)
 
     # If the username and password are correct, return a success message along with the JWT token
-    return {"message": "Login successful", "token": jwt_token}
+    return {"message": "Login successful", "token": jwt_token, "user": user}
 
 class Query(BaseModel):
     name: str
