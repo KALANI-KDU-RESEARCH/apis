@@ -6,8 +6,8 @@ from pymongo.errors import ConnectionFailure
 import logging
 from typing import List
 import bcrypt
-from utils.index import generate_jwt_token
-from models.index import predict
+from utils.index import generate_jwt_token, env
+from models.index import predict, chat, getChats
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -25,7 +25,7 @@ app.add_middleware(
 
 #=============================================== DB Configurations =========================================
 # MongoDB Atlas connection string
-MONGODB_URI = "mongodb+srv://kalani:b7JITSY8HHyc22pQ@cluster0.lym7j1o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGODB_URI = env('MONGODB_URI') + '=true&w=majority&appName=Cluster0'
 
 # Connect to MongoDB Atlas
 try:
@@ -109,3 +109,19 @@ class Query(BaseModel):
 @app.post("/predict/")
 async def prediction(query: Query):
     return predict(query.name)
+
+class Chat(BaseModel):
+     userId: str
+     userName: str
+     text: str
+
+# Chat route
+@app.post("/chat/")
+async def chatBot(msg: Chat):
+    return chat(msg, db)
+
+
+# Chat route
+@app.post("/chat/{userId}")
+async def getChatsByUserId(userId):
+    return getChats(userId, db)
