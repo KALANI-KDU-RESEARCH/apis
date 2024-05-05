@@ -60,22 +60,25 @@ async def read_root():
 # Registration route
 @app.post("/register/")
 async def register(user: User):
-    # Check if the username already exists
-    existing_user = users_collection.find_one({"email": user.email})
-    # Hash the password
-    hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
-    if existing_user:
-        logging.info(f"Username {user.email} already exists")
-        raise HTTPException(status_code=400, detail="Email already exists")
+    try:
+        # Check if the username already exists
+        existing_user = users_collection.find_one({"email": user.email})
+        # Hash the password
+        hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+        if existing_user:
+            logging.info(f"Username {user.email} already exists")
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-    # Insert the new user into the database
-    user_data = {"email": user.email, "password": hashed_password,  "age": user.age,
-        "experience": user.experience,
-        "interests": user.interests, "type": user.type}
-    result = users_collection.insert_one(user_data)
+        # Insert the new user into the database
+        user_data = {"email": user.email, "password": hashed_password,  "age": user.age,
+            "experience": user.experience,
+            "interests": user.interests, "type": user.type}
+        result = users_collection.insert_one(user_data)
 
-    logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
-    return {"message": "User registered successfully", "user_id": str(result.inserted_id)}
+        logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
+        return {"message": "User registered successfully", "user_id": str(result.inserted_id)}
+    except:
+         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # Define a Pydantic model for the login request
 class LoginRequest(BaseModel):
@@ -85,22 +88,25 @@ class LoginRequest(BaseModel):
 # Login route
 @app.post("/login/")
 async def login(login_request: LoginRequest):
-    # Find the user in the database
-    user = users_collection.find_one({"email": login_request.email})
-    print(user)
-    user['_id'] = str(user['_id'])
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    try:
+        # Find the user in the database
+        user = users_collection.find_one({"email": login_request.email})
+        print(user)
+        user['_id'] = str(user['_id'])
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Verify the password
-    if not bcrypt.checkpw(login_request.password.encode('utf-8'), user['password']):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        # Verify the password
+        if not bcrypt.checkpw(login_request.password.encode('utf-8'), user['password']):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Generate JWT token
-    jwt_token = generate_jwt_token(user)
+        # Generate JWT token
+        jwt_token = generate_jwt_token(user)
 
-    # If the username and password are correct, return a success message along with the JWT token
-    return {"message": "Login successful", "token": jwt_token, "user": user}
+        # If the username and password are correct, return a success message along with the JWT token
+        return {"message": "Login successful", "token": jwt_token, "user": user}
+    except:
+         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 class Query(BaseModel):
     name: str
