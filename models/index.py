@@ -59,3 +59,12 @@ def getChats(userId, db):
 
     except:
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+def deleteChats(userId, db):
+    try:
+        chat_collection = db["chats"]
+        chat_collection.delete_many({"userId": userId})
+        return {"mesage": "Chats Deleted Successfully"}
+
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")

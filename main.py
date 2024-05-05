@@ -7,7 +7,7 @@ import logging
 from typing import List
 import bcrypt
 from utils.index import generate_jwt_token, env
-from models.index import predict, chat, getChats
+from models.index import predict, chat, getChats, deleteChats
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -127,3 +127,8 @@ async def chatBot(msg: Chat):
 @app.get("/chat/{userId}")
 async def getChatsByUserId(userId):
     return getChats(userId, db)
+
+# Chat route
+@app.delete("/chat/{userId}")
+async def deleteChatsByUserId(userId):
+    return deleteChats(userId, db)
