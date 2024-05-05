@@ -34,7 +34,7 @@ def chat(prompt, db):
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
         payload = {
             "prompt": {
-            "text": f"My name is {prompt.userName}. I'm a micro Entrepreneur. You are my assistant. Please answer this question '{prompt.text}'. It's best to respond to my message in a short sentence or two. Try to act assistant and casual rather than being very formal."
+            "text": f"My name is {prompt.userName}. I'm a micro Entrepreneur. You are my assistant. Please answer this question '{prompt.text}'. It's best to respond to my message. Try to act assistant and casual rather than being very formal."
             }
         }
 

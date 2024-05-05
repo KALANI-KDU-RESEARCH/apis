@@ -60,7 +60,6 @@ async def read_root():
 # Registration route
 @app.post("/register/")
 async def register(user: User):
-    try:
         # Check if the username already exists
         existing_user = users_collection.find_one({"email": user.email})
         # Hash the password
@@ -77,8 +76,6 @@ async def register(user: User):
 
         logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
         return {"message": "User registered successfully", "user_id": str(result.inserted_id)}
-    except:
-         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # Define a Pydantic model for the login request
 class LoginRequest(BaseModel):
@@ -88,12 +85,12 @@ class LoginRequest(BaseModel):
 # Login route
 @app.post("/login/")
 async def login(login_request: LoginRequest):
-    try:
         # Find the user in the database
         user = users_collection.find_one({"email": login_request.email})
         print(user)
-        user['_id'] = str(user['_id'])
-        if not user:
+        if user:
+            user['_id'] = str(user['_id'])
+        else:
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # Verify the password
@@ -105,8 +102,7 @@ async def login(login_request: LoginRequest):
 
         # If the username and password are correct, return a success message along with the JWT token
         return {"message": "Login successful", "token": jwt_token, "user": user}
-    except:
-         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 class Query(BaseModel):
     name: str
