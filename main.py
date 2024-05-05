@@ -128,6 +128,6 @@ async def chatBot(msg: Chat):
 
 
 # Chat route
-@app.post("/chat/{userId}")
+@app.get("/chat/{userId}")
 async def getChatsByUserId(userId):
     return getChats(userId, db)
