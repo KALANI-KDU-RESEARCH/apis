@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from pymongo.errors import ConnectionFailure
 import logging
 from typing import List
 import bcrypt
-from utils.index import generate_jwt_token
-from models.index import predict
+from utils.index import generate_jwt_token, env
+from models.index import predict, chat, getChats, deleteChats, updateInterests, createPostForEntrepreneur, getPostsForEntrepreneurById, editPostForEntrepreneur, deletePostForEntrepreneur, getAllPostsForInvester, calculate_impression_rate_for_user, markAsNotInterested, send_email
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -19,13 +19,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # allow requests from all origins
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # allow these HTTP methods
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # allow these HTTP methods
     allow_headers=["*"],  # allow all headers
 )
 
 #=============================================== DB Configurations =========================================
 # MongoDB Atlas connection string
-MONGODB_URI = "mongodb+srv://kalani:b7JITSY8HHyc22pQ@cluster0.lym7j1o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGODB_URI = env('MONGODB_URI') + '=true&w=majority&appName=Cluster0'
 
 # Connect to MongoDB Atlas
 try:
@@ -60,22 +60,22 @@ async def read_root():
 # Registration route
 @app.post("/register/")
 async def register(user: User):
-    # Check if the username already exists
-    existing_user = users_collection.find_one({"email": user.email})
-    # Hash the password
-    hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
-    if existing_user:
-        logging.info(f"Username {user.email} already exists")
-        raise HTTPException(status_code=400, detail="Email already exists")
+        # Check if the username already exists
+        existing_user = users_collection.find_one({"email": user.email})
+        # Hash the password
+        hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+        if existing_user:
+            logging.info(f"Username {user.email} already exists")
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-    # Insert the new user into the database
-    user_data = {"email": user.email, "password": hashed_password,  "age": user.age,
-        "experience": user.experience,
-        "interests": user.interests, "type": user.type}
-    result = users_collection.insert_one(user_data)
+        # Insert the new user into the database
+        user_data = {"email": user.email, "password": hashed_password,  "age": user.age,
+            "experience": user.experience,
+            "interests": user.interests, "type": user.type}
+        result = users_collection.insert_one(user_data)
 
-    logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
-    return {"message": "User registered successfully", "user_id": str(result.inserted_id)}
+        logging.info(f"User {user.email} registered successfully with ID: {result.inserted_id}")
+        return {"message": "User registered successfully", "user_id": str(result.inserted_id)}
 
 # Define a Pydantic model for the login request
 class LoginRequest(BaseModel):
@@ -85,22 +85,24 @@ class LoginRequest(BaseModel):
 # Login route
 @app.post("/login/")
 async def login(login_request: LoginRequest):
-    # Find the user in the database
-    user = users_collection.find_one({"email": login_request.email})
-    print(user)
-    user['_id'] = str(user['_id'])
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        # Find the user in the database
+        user = users_collection.find_one({"email": login_request.email})
+        print(user)
+        if user:
+            user['_id'] = str(user['_id'])
+        else:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Verify the password
-    if not bcrypt.checkpw(login_request.password.encode('utf-8'), user['password']):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        # Verify the password
+        if not bcrypt.checkpw(login_request.password.encode('utf-8'), user['password']):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Generate JWT token
-    jwt_token = generate_jwt_token(user)
+        # Generate JWT token
+        jwt_token = generate_jwt_token(user)
 
-    # If the username and password are correct, return a success message along with the JWT token
-    return {"message": "Login successful", "token": jwt_token, "user": user}
+        # If the username and password are correct, return a success message along with the JWT token
+        return {"message": "Login successful", "token": jwt_token, "user": user}
+
 
 class Query(BaseModel):
     name: str
@@ -109,3 +111,77 @@ class Query(BaseModel):
 @app.post("/predict/")
 async def prediction(query: Query):
     return predict(query.name)
+
+class Chat(BaseModel):
+     userId: str
+     userName: str
+     text: str
+
+# Chat route
+@app.post("/chat/")
+async def chatBot(msg: Chat):
+    return chat(msg, db)
+
+
+# Chat route
+@app.get("/chat/{userId}")
+async def getChatsByUserId(userId):
+    return getChats(userId, db)
+
+# Chat route
+@app.delete("/chat/{userId}")
+async def deleteChatsByUserId(userId):
+    return deleteChats(userId, db)
+
+class InterestsPayload(BaseModel):
+    interests: list[str]
+    age: int
+    experience: int
+@app.patch("/profile/{userId}")
+async def updateUserInterests(interests:InterestsPayload, userId):
+    return updateInterests(interests, userId, db)
+
+class PostPayload(BaseModel):
+    title: str
+    desc: str
+    cat: list[str]
+    img: str
+    userId: str
+@app.post("/post")
+async def createPost(payload:PostPayload):
+    return createPostForEntrepreneur(payload, db)
+
+@app.get("/getPosts/{userId}")
+async def getPostsById(userId):
+    return getPostsForEntrepreneurById(userId, db)
+
+@app.put("/editPost/{postId}")
+async def editPost(payload: PostPayload, postId):
+    return editPostForEntrepreneur(payload, postId, db)
+
+@app.delete("/deletePost/{postId}")
+async def deletePost(postId):
+    return deletePostForEntrepreneur(postId, db)
+
+@app.get("/getAllPosts")
+async def getAllPosts():
+    return getAllPostsForInvester(db)
+
+class ImpressionRatePayload(BaseModel):
+    interests_count: int
+    age: int
+    experience: int
+@app.post("/impressionRate/{userId}")
+async def impressionRate(payload: ImpressionRatePayload, userId):
+    return calculate_impression_rate_for_user(payload, userId, db)
+
+@app.post("/notInterested/{postId}/{userId}")
+async def notInterested(postId,userId):
+    return markAsNotInterested(postId,userId, db)
+
+class InvestorEmailSchema(BaseModel):
+    email: EmailStr
+    title: str
+@app.post("/sendEmail/{investorId}/{eId}/{pId}")
+async def sendEmail(email: InvestorEmailSchema, investorId, eId, pId):
+    return send_email(email, investorId, eId, pId, db)
