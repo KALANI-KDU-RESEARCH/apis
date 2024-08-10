@@ -71,14 +71,53 @@ def deleteChats(userId, db):
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
 def updateInterests(payload, userId, db):
-    print(payload, userId)
     try:
         users_collection = db["users"]
-        result = users_collection.update_one(
+        users_collection.update_one(
             {"_id": ObjectId(userId)},  
             {"$set": {"interests": payload.interests}}
         )
-        print(result)
         return {"mesage": "Interests Updated Successfully"}
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+def createPostForEntrepreneur(payload, db):
+    try:
+        posts_collection = db["posts"]
+        posts_data = {"userId": payload.userId, "title": payload.title,  "desc": payload.desc, "cat": payload.cat, "img": payload.img}
+        posts_collection.insert_one(posts_data)
+        return {"mesage": "Post Created Successfully"}
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+def getPostsForEntrepreneurById(userId, db):
+    try:
+        posts_collection = db["posts"]
+        posts = posts_collection.find({"userId": userId})
+        posts = list(posts)
+        for post in posts:
+            post["_id"] = str(post["_id"])
+        return posts
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+def editPostForEntrepreneur(payload, postId, db):
+    try:
+        posts_collection = db["posts"]
+        posts_collection.update_one(
+            {"_id": ObjectId(postId)},  
+            {"$set": {"title": payload.title,  "desc": payload.desc, "cat": payload.cat, "img": payload.img }}
+        )
+        return {"message": "Post Updated Successfully"}
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+def deletePostForEntrepreneur(postId, db):
+    try:
+        posts_collection = db["posts"]
+        posts_collection.delete_one(
+            {"_id": ObjectId(postId)}
+        )
+        return {"message": "Post Deleted Successfully"}
     except:
         raise HTTPException(status_code=500, detail="Internal Server Error")

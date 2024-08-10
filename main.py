@@ -7,7 +7,7 @@ import logging
 from typing import List
 import bcrypt
 from utils.index import generate_jwt_token, env
-from models.index import predict, chat, getChats, deleteChats, updateInterests
+from models.index import predict, chat, getChats, deleteChats, updateInterests, createPostForEntrepreneur, getPostsForEntrepreneurById, editPostForEntrepreneur, deletePostForEntrepreneur
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -138,3 +138,25 @@ class InterestsPayload(BaseModel):
 @app.patch("/profile/{userId}")
 async def updateUserInterests(interests:InterestsPayload, userId):
     return updateInterests(interests, userId, db)
+
+class PostPayload(BaseModel):
+    title: str
+    desc: str
+    cat: list[str]
+    img: str
+    userId: str
+@app.post("/post")
+async def createPost(payload:PostPayload):
+    return createPostForEntrepreneur(payload, db)
+
+@app.get("/getPosts/{userId}")
+async def getPostsById(userId):
+    return getPostsForEntrepreneurById(userId, db)
+
+@app.put("/editPost/{postId}")
+async def editPost(payload: PostPayload, postId):
+    return editPostForEntrepreneur(payload, postId, db)
+
+@app.delete("/deletePost/{postId}")
+async def deletePost(postId):
+    return deletePostForEntrepreneur(postId, db)
