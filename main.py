@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from pymongo.errors import ConnectionFailure
 import logging
 from typing import List
 import bcrypt
 from utils.index import generate_jwt_token, env
-from models.index import predict, chat, getChats, deleteChats, updateInterests, createPostForEntrepreneur, getPostsForEntrepreneurById, editPostForEntrepreneur, deletePostForEntrepreneur
+from models.index import predict, chat, getChats, deleteChats, updateInterests, createPostForEntrepreneur, getPostsForEntrepreneurById, editPostForEntrepreneur, deletePostForEntrepreneur, getAllPostsForInvester, calculate_impression_rate_for_user, markAsNotInterested, send_email
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -135,6 +135,8 @@ async def deleteChatsByUserId(userId):
 
 class InterestsPayload(BaseModel):
     interests: list[str]
+    age: int
+    experience: int
 @app.patch("/profile/{userId}")
 async def updateUserInterests(interests:InterestsPayload, userId):
     return updateInterests(interests, userId, db)
@@ -160,3 +162,26 @@ async def editPost(payload: PostPayload, postId):
 @app.delete("/deletePost/{postId}")
 async def deletePost(postId):
     return deletePostForEntrepreneur(postId, db)
+
+@app.get("/getAllPosts")
+async def getAllPosts():
+    return getAllPostsForInvester(db)
+
+class ImpressionRatePayload(BaseModel):
+    interests_count: int
+    age: int
+    experience: int
+@app.post("/impressionRate/{userId}")
+async def impressionRate(payload: ImpressionRatePayload, userId):
+    return calculate_impression_rate_for_user(payload, userId, db)
+
+@app.post("/notInterested/{postId}/{userId}")
+async def notInterested(postId,userId):
+    return markAsNotInterested(postId,userId, db)
+
+class InvestorEmailSchema(BaseModel):
+    email: EmailStr
+    title: str
+@app.post("/sendEmail/{investorId}/{eId}/{pId}")
+async def sendEmail(email: InvestorEmailSchema, investorId, eId, pId):
+    return send_email(email, investorId, eId, pId, db)
