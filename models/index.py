@@ -3,6 +3,7 @@ from IPython.display import Markdown
 from utils.index import env
 import requests
 from fastapi import HTTPException
+from bson import ObjectId
 
 #THIS IS BASED ON GOOGLE LLM's
 def predict(query):
@@ -66,5 +67,18 @@ def deleteChats(userId, db):
         chat_collection.delete_many({"userId": userId})
         return {"mesage": "Chats Deleted Successfully"}
 
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+def updateInterests(payload, userId, db):
+    print(payload, userId)
+    try:
+        users_collection = db["users"]
+        result = users_collection.update_one(
+            {"_id": ObjectId(userId)},  
+            {"$set": {"interests": payload.interests}}
+        )
+        print(result)
+        return {"mesage": "Interests Updated Successfully"}
     except:
         raise HTTPException(status_code=500, detail="Internal Server Error")

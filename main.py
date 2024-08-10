@@ -7,7 +7,7 @@ import logging
 from typing import List
 import bcrypt
 from utils.index import generate_jwt_token, env
-from models.index import predict, chat, getChats, deleteChats
+from models.index import predict, chat, getChats, deleteChats, updateInterests
 
 app = FastAPI()
 app = FastAPI(swagger_ui_parameters={"syntaxHighlight": False}) #Enable Swagger UI
@@ -19,7 +19,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # allow requests from all origins
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # allow these HTTP methods
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # allow these HTTP methods
     allow_headers=["*"],  # allow all headers
 )
 
@@ -132,3 +132,9 @@ async def getChatsByUserId(userId):
 @app.delete("/chat/{userId}")
 async def deleteChatsByUserId(userId):
     return deleteChats(userId, db)
+
+class InterestsPayload(BaseModel):
+    interests: list[str]
+@app.patch("/profile/{userId}")
+async def updateUserInterests(interests:InterestsPayload, userId):
+    return updateInterests(interests, userId, db)
