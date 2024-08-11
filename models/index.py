@@ -120,7 +120,7 @@ def createPostForEntrepreneur(payload, db):
 def getPostsForEntrepreneurById(userId, db):
     try:
         posts_collection = db["posts"]
-        posts = posts_collection.find({"userId": userId})
+        posts = posts_collection.find({"userId": userId}).sort({ "_id": -1 })
         posts = list(posts)
         for post in posts:
             post["_id"] = str(post["_id"])
@@ -164,7 +164,7 @@ def deletePostForEntrepreneur(postId, db):
 def getAllPostsForInvester(db):
     try:
         posts_collection = db["posts"]
-        posts = posts_collection.find()
+        posts = posts_collection.find().sort({ "_id": -1 })
         posts = list(posts)
         users_collection = db["users"]
         users = users_collection.find()
